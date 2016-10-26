@@ -3,17 +3,20 @@ package controllers
 import javax.inject._
 import models.daos.{AbstractBaseDAO, BaseDAO}
 import models.entities._
+import models.request._
 import models.persistence.SlickTables._
 import play.api._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{Future, ExecutionContext, Await}
+import scala.concurrent.duration._
+import scala.util.Success
 
 @Singleton
 class BUsersController @Inject()(
   userDAO: AbstractBaseDAO[UserTable, User],
-  tagDAO: AbstractBaseDAO[TagTable, Tag]
+  userTagMapDAO: AbstractBaseDAO[UserTagMapTable, UserTagMap]
 )(
   implicit exec: ExecutionContext
 ) extends Controller {
@@ -22,7 +25,7 @@ class BUsersController @Inject()(
   val NotFoundResultBody   = """{"message":"NotFound"}"""
   val BadRequestResultBody = """{"message":"invalid json"}"""
 
-  implicit val userStoreWrites = new Writes[User]{
+  implicit val userWrites = new Writes[User]{
     def writes(user: User) = Json.obj(
       "id"                    -> user.id,
       "email"                 -> user.email,
@@ -39,8 +42,14 @@ class BUsersController @Inject()(
     )
   }
   
-  implicit val userStoreReads: Reads[User] = (
+  implicit val tagRequestReads: Reads[TagRequest] = (
     (JsPath \ "id").read[Long] and
+    (JsPath \ "name").readNullable[String] and
+    (JsPath \ "num_users").readNullable[Long]
+  )(TagRequest.apply _)
+
+  implicit val userRequestReads: Reads[UserRequest] = (
+    (JsPath \ "id").readNullable[Long] and
     (JsPath \ "email").readNullable[String] and
     (JsPath \ "name").readNullable[String] and
     (JsPath \ "name_kana").readNullable[String] and
@@ -51,8 +60,9 @@ class BUsersController @Inject()(
     (JsPath \ "token" \ "access_token").readNullable[String] and
     (JsPath \ "token" \ "refresh_token").readNullable[String] and
     (JsPath \ "token" \ "access_token_expires_in").readNullable[String] and
-    (JsPath \ "token" \ "refresh_token_expires_in").readNullable[String]
-  )(User.apply _)
+    (JsPath \ "token" \ "refresh_token_expires_in").readNullable[String] and
+    (JsPath \ "tags").readNullable[Seq[TagRequest]]
+  )(UserRequest.apply _)
 
   /**
    */
@@ -67,14 +77,25 @@ class BUsersController @Inject()(
    */
   def create = Action.async(parse.json) {
     request => {
-      val requestBody = request.body.asOpt[User]
+      val optionalUserRequest = request.body.asOpt[UserRequest]
 
-      requestBody.fold(
+      optionalUserRequest.fold(
         Future { BadRequest(BadRequestResultBody).as(ContentTypeJsonUtf8) }
-      )(user => {
-        userDAO.insert(user).map(
-          id => Ok(id.toString).as(ContentTypeJsonUtf8)
-        )
+      )(userRequest => {
+        val user = User(0, userRequest.email, userRequest.name, userRequest.nameKana, userRequest.team, userRequest.hitotalentId, userRequest.gendar, userRequest.age, userRequest.accessToken, userRequest.refreshToken, userRequest.accessTokenExpiresIn, userRequest.refreshTokenExpiresIn)
+        userDAO.insert(user).andThen{
+          case Success(id) => {
+            userRequest.tags.fold(
+            )(tags => {
+              tags.foreach(tag => {
+                val utm = UserTagMap(0, id, tag.id)
+                userTagMapDAO.insert(utm)
+              })
+            })
+          }
+        }.map(id => {
+          Ok(id.toString).as(ContentTypeJsonUtf8)
+        })
       })
     }
   }
@@ -93,12 +114,12 @@ class BUsersController @Inject()(
 
   /**
    */
-  def patch(id :Long) = Action {
-    BadRequest(s"BUsersController#patch is not implemented yet.")
+  def patch(id :Long) = Action.async {
+    Future { BadRequest(s"BUsersController#patch is not implemented yet.") }
   }
 
-  def delete(id :Long) = Action {
-    BadRequest(s"BUsersController#delete is not implemented yet.")
+  def delete(id :Long) = Action.async {
+    Future { BadRequest(s"BUsersController#delete is not implemented yet.") }
   }
 
 }

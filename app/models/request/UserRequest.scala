@@ -1,7 +1,9 @@
-package models.entities
+package models.request
 
-case class User (
-  id:                    Long,
+import models.request.TagRequest
+
+case class UserRequest (
+  id:                    Option[Long],
   email:                 Option[String],
   name:                  Option[String],
   nameKana:              Option[String],
@@ -12,5 +14,6 @@ case class User (
   accessToken:           Option[String],
   refreshToken:          Option[String],
   accessTokenExpiresIn:  Option[String],
-  refreshTokenExpiresIn: Option[String]
-) extends BaseEntity
+  refreshTokenExpiresIn: Option[String],
+  tags:                  Option[Seq[TagRequest]]
+) 
