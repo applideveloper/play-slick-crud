@@ -31,6 +31,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def accessTokenExpiresIn  = column[Option[String]]("ACCESS_TOKEN_EXPIRES_IN")
     def refreshTokenExpiresIn = column[Option[String]]("REFRESH_TOKEN_EXPIRES_IN")
     def * = (
+      id,
       email,
       name,
       nameKana,
@@ -49,6 +50,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def name                  = column[Option[String]]("NAME")
     def alias                 = column[Option[String]]("ALIAS")
     def * = (
+      id,
       name, 
       alias
     ) <> (Tag.tupled, Tag.unapply)
@@ -58,6 +60,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def eventDate             = column[Option[String]]("EVENT_DATE")
     def eventType             = column[Option[Long]]("EVENT_TYPE")
     def * = (
+      id,
       eventDate, 
       eventType
     ) <> (Event.tupled, Event.unapply)
@@ -67,6 +70,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def eventId               = column[Option[Long]]("EVENT_ID")
     def tagId                 = column[Option[Long]]("TAG_ID")
     def * = (
+      id,
       eventId,
       tagId
     ) <> (Biotop.tupled, Biotop.unapply)
@@ -76,6 +80,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def userId                = column[Long]("USER_ID")
     def tagId                 = column[Long]("TAG_ID")
     def * = (
+      id,
       userId, 
       tagId
     ) <> (UserTagMap.tupled, UserTagMap.unapply)
@@ -85,6 +90,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def userId                = column[Long]("USER_ID")
     def eventId               = column[Long]("EVENT_ID")
     def * = (
+      id,
       userId,
       eventId
     ) <> (UserEventMap.tupled, UserEventMap.unapply)
@@ -94,6 +100,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
     def userId                = column[Long]("USER_ID")
     def biotopId              = column[Long]("BIOTOP_ID")
     def * = (
+      id,
       userId, 
       biotopId
     ) <> (UserBiotopMap.tupled, UserBiotopMap.unapply)

@@ -5,6 +5,7 @@ import models.daos.{AbstractBaseDAO, BaseDAO}
 import models.entities._
 import models.persistence.SlickTables._
 import play.api._
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.concurrent.{Future, ExecutionContext}
@@ -16,6 +17,10 @@ class BUsersController @Inject()(
 )(
   implicit exec: ExecutionContext
 ) extends Controller {
+
+  val ContentTypeJsonUtf8  = "application/json; charset=utf-8"
+  val NotFoundResultBody   = """{"message":"NotFound"}"""
+  val BadRequestResultBody = """{"message":"invalid json"}"""
 
   implicit val userStoreWrites = new Writes[User]{
     def writes(user: User) = Json.obj(
@@ -34,20 +39,44 @@ class BUsersController @Inject()(
     )
   }
   
+  implicit val userStoreReads: Reads[User] = (
+    (JsPath \ "id").read[Long] and
+    (JsPath \ "email").readNullable[String] and
+    (JsPath \ "name").readNullable[String] and
+    (JsPath \ "name_kana").readNullable[String] and
+    (JsPath \ "team").readNullable[String] and
+    (JsPath \ "hitotalent_id").readNullable[String] and
+    (JsPath \ "gendar").readNullable[String] and
+    (JsPath \ "age").readNullable[Long] and
+    (JsPath \ "token" \ "access_token").readNullable[String] and
+    (JsPath \ "token" \ "refresh_token").readNullable[String] and
+    (JsPath \ "token" \ "access_token_expires_in").readNullable[String] and
+    (JsPath \ "token" \ "refresh_token_expires_in").readNullable[String]
+  )(User.apply _)
+
   /**
    */
   def index = Action.async {
     userDAO.findByFilter(_.isValid).map(result => {
-      if(result.isEmpty) NotFound("{}")
-      else Ok(Json.toJson(result))
+      if(result.isEmpty) NotFound(NotFoundResultBody).as(ContentTypeJsonUtf8)
+      else Ok(Json.toJson(result)).as(ContentTypeJsonUtf8)
     })
   }
 
   /**
    */
-  //def create = Action.async(parse.json) {
-  def create = Action {
-    BadRequest(s"BUsersController#create is not implemented yet.")
+  def create = Action.async(parse.json) {
+    request => {
+      val requestBody = request.body.asOpt[User]
+
+      requestBody.fold(
+        Future { BadRequest(BadRequestResultBody).as(ContentTypeJsonUtf8) }
+      )(user => {
+        userDAO.insert(user).map(
+          id => Ok(id.toString).as(ContentTypeJsonUtf8)
+        )
+      })
+    }
   }
 
   /**
@@ -55,9 +84,9 @@ class BUsersController @Inject()(
   def get(id :Long) = Action.async {
     userDAO.findById(id).map(result => {
       result.fold(
-        NotFound("{}")
+        NotFound(NotFoundResultBody).as(ContentTypeJsonUtf8)
       )(
-        user => Ok(Json.toJson(user))
+        user => Ok(Json.toJson(user)).as(ContentTypeJsonUtf8)
       )
     })
   }
