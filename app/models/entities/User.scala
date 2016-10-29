@@ -1,5 +1,7 @@
 package models.entities
 
+import models.dtos.UserDto
+
 case class User (
   id:                    Long,
   email:                 Option[String],
