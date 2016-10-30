@@ -1,5 +1,6 @@
 package controllers
 
+import json.JsonHelper
 import javax.inject._
 import models.daos.{AbstractBaseDAO, BaseDAO}
 import models.entities._
@@ -25,88 +26,15 @@ class BUsersController @Inject()(
   val NotFoundResultBody   = """{"message":"NotFound"}"""
   val BadRequestResultBody = """{"message":"invalid json"}"""
 
-  implicit val tagDtoWrites = new Writes[TagDto]{
-    def writes(tag: TagDto) = Json.obj(
-      "id"        -> tag.id,
-      "name"      -> tag.name,
-      "num_users" -> tag.numUsers
-    )
-  }
-
-  implicit val eventDtoWrites = new Writes[EventDto]{
-    def writes(event: EventDto) = Json.obj(
-      "id"        -> event.id,
-      "date"      -> event.date,
-      "type"      -> event.eventType,
-      "num_users" -> event.numUsers
-    )
-  }
+  implicit val tagDtoWrites    = JsonHelper.tagDtoWrites
+  implicit val eventDtoWrites  = JsonHelper.eventDtoWrites
+  implicit val biotopDtoWrites = JsonHelper.biotopDtoWrites 
+  implicit val userDtoWrites   = JsonHelper.userDtoWrites
+  implicit val tagDtoReads     = JsonHelper.tagDtoReads
+  implicit val eventDtoReads   = JsonHelper.eventDtoReads
+  implicit val biotopDtoReads  = JsonHelper.biotopDtoReads
+  implicit val userDtoReads    = JsonHelper.userDtoReads
   
-  implicit val biotopDtoWrites = new Writes[BiotopDto]{
-    def writes(biotop: BiotopDto) = Json.obj(
-      "id"        -> biotop.id,
-      "event"     -> biotop.event,
-      "tag"       -> biotop.tag
-    )
-  }
-
-  implicit val userDtoWrites = new Writes[UserDto]{
-    def writes(user: UserDto) = Json.obj(
-      "id"                    -> user.id,
-      "email"                 -> user.email,
-      "name"                  -> user.name,
-      "nameKana"              -> user.nameKana,
-      "team"                  -> user.team,
-      "hitotalentId"          -> user.hitotalentId,
-      "gendar"                -> user.gendar,
-      "age"                   -> user.age,
-      "accessToken"           -> user.accessToken,
-      "refreshToken"          -> user.refreshToken,
-      "accessTokenExpiresIn"  -> user.accessTokenExpiresIn,
-      "refreshTokenExpiresIn" -> user.refreshTokenExpiresIn,
-      "tags"                  -> user.tags,
-      "events"                -> user.events,
-      "biotops"               -> user.biotops
-    )
-  }
-
-  implicit val tagDtoReads: Reads[TagDto] = (
-    (JsPath \ "id").readNullable[Long] and
-    (JsPath \ "name").readNullable[String] and
-    (JsPath \ "num_users").readNullable[Long]
-  )(TagDto.apply _)
-
-  implicit val eventDtoReads: Reads[EventDto] = (
-    (JsPath \ "id").readNullable[Long] and
-    (JsPath \ "date").readNullable[String] and
-    (JsPath \ "type").readNullable[Long] and
-    (JsPath \ "num_users").readNullable[Long]
-  )(EventDto.apply _)
-
-  implicit val biotopDtoReads: Reads[BiotopDto] = (
-    (JsPath \ "id").readNullable[Long] and
-    (JsPath \ "event").readNullable[EventDto] and
-    (JsPath \ "tag").readNullable[TagDto]
-  )(BiotopDto.apply _)
-
-  implicit val userDtoReads: Reads[UserDto] = (
-    (JsPath \ "id").readNullable[Long] and
-    (JsPath \ "email").readNullable[String] and
-    (JsPath \ "name").readNullable[String] and
-    (JsPath \ "name_kana").readNullable[String] and
-    (JsPath \ "team").readNullable[String] and
-    (JsPath \ "hitotalent_id").readNullable[String] and
-    (JsPath \ "gendar").readNullable[String] and
-    (JsPath \ "age").readNullable[Long] and
-    (JsPath \ "token" \ "access_token").readNullable[String] and
-    (JsPath \ "token" \ "refresh_token").readNullable[String] and
-    (JsPath \ "token" \ "access_token_expires_in").readNullable[String] and
-    (JsPath \ "token" \ "refresh_token_expires_in").readNullable[String] and
-    (JsPath \ "tags").readNullable[Seq[TagDto]] and
-    (JsPath \ "events").readNullable[Seq[EventDto]] and
-    (JsPath \ "biotops").readNullable[Seq[BiotopDto]]
-  )(UserDto.apply _)
-
   /**
    */
   def index = Action.async {
@@ -128,19 +56,37 @@ class BUsersController @Inject()(
       request.body.asOpt[UserDto].fold(
         Future { BadRequest(BadRequestResultBody).as(ContentTypeJsonUtf8) }
       )(userRequest => {
-        userDAO.insert(userRequest.toEntity).andThen{
-          case Success(id) => {
-            userRequest.tags.fold()(tags => {
-              tags.foreach(tag => {
-                tag.id.fold()(tId => {
-                  userTagMapDAO.insert(UserTagMap(0, id, tId))
+        if(userRequest.isEmpty) Future { BadRequest(BadRequestResultBody).as(ContentTypeJsonUtf8) }
+        else {
+          userDAO.insert(userRequest.toEntity).andThen{
+            case Success(id) => {
+              userRequest.tags.fold()(tags => {
+                tags.foreach(tag => {
+                  tag.id.fold()(tId => {
+                    userTagMapDAO.insert(UserTagMap(0, id, tId))
+                  })
                 })
               })
-            })
-          }
-        }.map(id => {
-          Ok(id.toString).as(ContentTypeJsonUtf8)
-        })
+            }
+          }.map(id => {
+            Ok(Json.toJson(
+              UserDto(
+                Option(id),
+                userRequest.email,
+                userRequest.name,
+                userRequest.nameKana,
+                userRequest.team,
+                userRequest.hitotalentId,
+                userRequest.gendar,
+                userRequest.age,
+                userRequest.token,
+                userRequest.tags,
+                userRequest.events,
+                userRequest.biotops
+              )
+            )).as(ContentTypeJsonUtf8)
+          })
+        }
       })
     }
   }

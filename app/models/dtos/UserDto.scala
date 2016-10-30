@@ -11,10 +11,7 @@ case class UserDto (
   hitotalentId:          Option[String],
   gendar:                Option[String],
   age:                   Option[Long],
-  accessToken:           Option[String],
-  refreshToken:          Option[String],
-  accessTokenExpiresIn:  Option[String],
-  refreshTokenExpiresIn: Option[String],
+  token:                 Option[TokenDto],
   tags:                  Option[Seq[TagDto]],
   events:                Option[Seq[EventDto]],
   biotops:               Option[Seq[BiotopDto]]
@@ -29,12 +26,26 @@ case class UserDto (
       this.hitotalentId,
       this.gendar,
       this.age,
-      this.accessToken,
-      this.refreshToken,
-      this.accessTokenExpiresIn,
-      this.refreshTokenExpiresIn
+      this.token.fold(Option(""))(t=>t.accessToken),
+      this.token.fold(Option(""))(t=>t.refreshToken),
+      this.token.fold(Option(""))(t=>t.accessTokenExpiresIn),
+      this.token.fold(Option(""))(t=>t.refreshTokenExpiresIn)
     )
   }
+
+  def isEmpty = 
+    id.isEmpty           &&
+    email.isEmpty        &&
+    name.isEmpty         &&
+    nameKana.isEmpty     &&
+    team.isEmpty         &&
+    hitotalentId.isEmpty &&
+    gendar.isEmpty       &&
+    age.isEmpty          &&
+    token.isEmpty        &&
+    tags.isEmpty         &&
+    events.isEmpty       &&
+    biotops.isEmpty
 }
 
 object UserDto {
@@ -44,6 +55,12 @@ object UserDto {
     events:  Option[Seq[Event]],
     biotops: Option[Seq[Biotop]]
   ) = {
+    val tokenDto   = Option(TokenDto(
+      user.accessToken,
+      user.refreshToken,
+      user.accessTokenExpiresIn,
+      user.refreshTokenExpiresIn
+    ))
     val tagDtos    = tags.map(_.map(TagDto.create(_)))
     val eventDtos  = events.map(_.map(EventDto.create(_)))
     val biotopDtos = biotops.map(_.map(BiotopDto.create(_, None, None)))
@@ -57,10 +74,7 @@ object UserDto {
       user.hitotalentId,
       user.gendar,
       user.age,
-      user.accessToken,
-      user.refreshToken,
-      user.accessTokenExpiresIn,
-      user.refreshTokenExpiresIn,
+      tokenDto,
       tagDtos,
       eventDtos,
       biotopDtos 
