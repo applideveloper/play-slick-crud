@@ -92,7 +92,7 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
   val requestUser_1 = UserDto(
     None,
     Some("hoge@hoge.com"),
-    Some(" hoge "),
+    Some(" user1 "),
     Some("ホｹﾞ　"),
     Some("㍿√㌶"),
     Some("1"),
@@ -117,17 +117,88 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     response.header(ContentType) mustBe ContentTypeJsonUtf8
     response.status mustBe OK
     val responseUser = Json.parse(response.body).as[UserDto]
-    responseUser.id mustBe Option(1)
-    responseUser.name mustBe requestUser_1.name
+    responseUser.id           mustBe Option(1)
+    responseUser.email        mustBe requestUser_1.email
+    responseUser.name         mustBe requestUser_1.name
+    responseUser.nameKana     mustBe requestUser_1.nameKana
+    responseUser.team         mustBe requestUser_1.team
+    responseUser.hitotalentId mustBe requestUser_1.hitotalentId
+    responseUser.gendar       mustBe requestUser_1.gendar
+    responseUser.age          mustBe requestUser_1.age
+    responseUser.token        mustBe requestUser_1.token
+    responseUser.tags         mustBe requestUser_1.tags
+    responseUser.events       mustBe requestUser_1.events
+    responseUser.biotops      mustBe requestUser_1.biotops
   }
+
+  val requestUser_2 = UserDto(
+    None,
+    Some("hoge@hoge.com"),
+    Some("James Hetfield"),
+    Some("ジェームズ・ヘットフィールド"),
+    Some("アメリカ営業所"),
+    Some("12345"),
+    Some("男"),
+    Some(53),
+    Some(TokenDto(
+      Some("63d19ad95b39b88c3a72d08dbe5407a4e0ad8b3f"),
+      Some("63d19ad95b39b88c3a72d08dbe5407a4e0ad8b3f"),
+      Some("2020-01-01 00:00:00.0"),
+      Some("2020-01-01 00:00:00.0")
+    )),
+    Some(Seq(
+      TagDto(Some(1), Some("ボーカル"), Some(4)),
+      TagDto(Some(2), Some("ギター"), Some(4)),
+      TagDto(Some(3), Some("Metallica"), Some(4))
+    )),
+    Some(Seq(
+      EventDto(Some(1), None, None, None) 
+    )),
+    Some(Seq(
+      BiotopDto(Some(1), None, None) 
+    ))
+  )
+
+  val requestUser_3 = UserDto(
+    None,
+    Some("hoge@hoge.com"),
+    Some("Kirk Hammett"),
+    Some("カーク・ハメット"),
+    Some("アメリカ営業所"),
+    Some("12345"),
+    Some("男"),
+    Some(53),
+    Some(TokenDto(
+      Some("63d19ad95b39b88c3a72d08dbe5407a4e0ad8b3f"),
+      Some("63d19ad95b39b88c3a72d08dbe5407a4e0ad8b3f"),
+      Some("2020-01-01 00:00:00.0"),
+      Some("2020-01-01 00:00:00.0")
+    )),
+    Some(Seq(
+      TagDto(Some(2), Some("ギター"), Some(4)),
+      TagDto(Some(3), Some("Metallica"), Some(4))
+    )),
+    Some(Seq(
+      EventDto(Some(2), None, None, None) 
+    )),
+    Some(Seq(
+      BiotopDto(Some(2), None, None) 
+    ))
+  )
 
   /* GET */
   "GET /store/users returns all users" in {
+    /* create some test users*/
+    await(WSClient.url(StoreUsersURL).post(Json.toJson(requestUser_2)))
+    await(WSClient.url(StoreUsersURL).post(Json.toJson(requestUser_3)))
+    
     val testURL = s"$StoreUsersURL"
     val response = await(WSClient.url(testURL).get())
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
   
   "GET /store/users ignores illegal parameter format" in {
@@ -136,6 +207,59 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
+  }
+  
+  val requestUser_4 = UserDto(
+    Some(999999),
+    Some("hoge@hoge.com"),
+    Some("Robert Trujillo"),
+    Some("ロバート・トゥルージロ"),
+    Some("アメリカ営業所"),
+    Some("12345"),
+    Some("男"),
+    Some(53),
+    Some(TokenDto(
+      Some("63d19ad95b39b88c3a72d08dbe5407a4e0ad8b3f"),
+      Some("63d19ad95b39b88c3a72d08dbe5407a4e0ad8b3f"),
+      Some("2020-01-01 00:00:00.0"),
+      Some("2020-01-01 00:00:00.0")
+    )),
+    Some(Seq(
+      TagDto(Some(4), Some("ベース"), Some(4)),
+      TagDto(Some(3), Some("Metallica"), Some(4))
+    )),
+    Some(Seq(
+      EventDto(Some(3), None, None, None) 
+    )),
+    Some(Seq(
+      BiotopDto(Some(3), None, None) 
+    ))
+  )
+
+  /* PATCH */
+  "PATCH /store/users/{id} update user information." in {
+    val id = 1
+    val testURL = s"$StoreUsersURL/$id"
+    val requestBody = Json.toJson(requestUser_4)
+    val response = await(WSClient.url(testURL).patch(requestBody))
+
+    response.header(ContentType) mustBe ContentTypeJsonUtf8
+    response.status mustBe OK
+    val responseUser = Json.parse(response.body).as[UserDto]
+    responseUser.id           mustBe Option(1)
+    responseUser.email        mustBe requestUser_4.email
+    responseUser.name         mustBe requestUser_4.name
+    responseUser.nameKana     mustBe requestUser_4.nameKana
+    responseUser.team         mustBe requestUser_4.team
+    responseUser.hitotalentId mustBe requestUser_4.hitotalentId
+    responseUser.gendar       mustBe requestUser_4.gendar
+    responseUser.age          mustBe requestUser_4.age
+    responseUser.token        mustBe requestUser_4.token
+    responseUser.tags         mustBe requestUser_4.tags
+    responseUser.events       mustBe requestUser_4.events
+    responseUser.biotops      mustBe requestUser_4.biotops
   }
 
   "GET /store/users?tagId={id} searches users by tagId" in {
@@ -144,6 +268,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUser = Json.parse(response.body).as[UserDto]
+    responseUser.name mustBe requestUser_2.name
   }
   
   "GET /store/users?tagId={id} ignores when value is not a number" in {
@@ -152,6 +278,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
   
   "GET /store/users?tagId={id} ignores empty value" in {
@@ -160,6 +288,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
 
   "GET /store/users?eventId={id} searches users by eventId" in {
@@ -168,6 +298,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUser = Json.parse(response.body).as[UserDto]
+    responseUser.name mustBe requestUser_2.name
   }
   
   "GET /store/users?eventId={id} ignores when value is not a number" in {
@@ -176,6 +308,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
   
   "GET /store/users?eventId={id} ignores empty value" in {
@@ -184,6 +318,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
   
   "GET /store/users?biotopId={id} searches users by biotopId" in {
@@ -192,6 +328,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUser = Json.parse(response.body).as[UserDto]
+    responseUser.name mustBe requestUser_2.name
   }
   
   "GET /store/users?biotoptId={id} ignores when value is not a number" in {
@@ -200,6 +338,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
   
   "GET /store/users?biotopId={id} ignores empty value" in {
@@ -208,6 +348,8 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 3
   }
 
 
@@ -218,6 +360,19 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK 
+    val responseUser = Json.parse(response.body).as[UserDto]
+    responseUser.id           mustBe Option(1)
+    responseUser.email        mustBe requestUser_1.email
+    responseUser.name         mustBe requestUser_1.name
+    responseUser.nameKana     mustBe requestUser_1.nameKana
+    responseUser.team         mustBe requestUser_1.team
+    responseUser.hitotalentId mustBe requestUser_1.hitotalentId
+    responseUser.gendar       mustBe requestUser_1.gendar
+    responseUser.age          mustBe requestUser_1.age
+    responseUser.token        mustBe requestUser_1.token
+    responseUser.tags         mustBe requestUser_1.tags
+    responseUser.events       mustBe requestUser_1.events
+    responseUser.biotops      mustBe requestUser_1.biotops
   }
 
   "GET /store/users/{id} ignores parameters" in {
@@ -227,6 +382,32 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
+    val responseUser = Json.parse(response.body).as[UserDto]
+    responseUser.id           mustBe Option(1)
+    responseUser.email        mustBe requestUser_1.email
+    responseUser.name         mustBe requestUser_1.name
+    responseUser.nameKana     mustBe requestUser_1.nameKana
+    responseUser.team         mustBe requestUser_1.team
+    responseUser.hitotalentId mustBe requestUser_1.hitotalentId
+    responseUser.gendar       mustBe requestUser_1.gendar
+    responseUser.age          mustBe requestUser_1.age
+    responseUser.token        mustBe requestUser_1.token
+    responseUser.tags         mustBe requestUser_1.tags
+    responseUser.events       mustBe requestUser_1.events
+    responseUser.biotops      mustBe requestUser_1.biotops
+  }
+
+  /* DELETE */
+  "DELETE /store/users/{id} delete user" in {
+    val id = 1
+    val testURL = s"$StoreUsersURL/$id"
+    await(WSClient.url(testURL).delete)
+    val response = await(WSClient.url(StoreUsersURL).get())
+    
+    response.header(ContentType) mustBe ContentTypeJsonUtf8 
+    response.status mustBe OK
+    val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
+    responseUsers.size mustBe 2
   }
 
 }
