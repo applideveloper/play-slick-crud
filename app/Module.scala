@@ -2,11 +2,12 @@ import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, Provides}
 import java.time.Clock
 
-import models.daos.{AbstractBaseDAO, BaseDAO}
+import models.daos.{AbstractBaseDAO, BaseDAO, UserDAO}
 import models.entities._
 import models.persistence.SlickTables
 import models.persistence.SlickTables._
 
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 /**
  * This class is a Guice module that tells Guice how to bind several
@@ -33,7 +34,7 @@ class Module extends AbstractModule {
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone)
   }
 
-  @Provides def provideUserDAO:          AbstractBaseDAO[UserTable,User]                   = new BaseDAO[UserTable,User]
+  @Provides def provideUserDAO:          UserDAO                                           = new UserDAO
   @Provides def provideTagDAO:           AbstractBaseDAO[TagTable,Tag]                     = new BaseDAO[TagTable,models.entities.Tag]
   @Provides def provideEventDAO:         AbstractBaseDAO[EventTable,Event]                 = new BaseDAO[EventTable,Event]
   @Provides def provideBiotopDAO:        AbstractBaseDAO[BiotopTable,Biotop]               = new BaseDAO[BiotopTable,Biotop]

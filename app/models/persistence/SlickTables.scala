@@ -79,6 +79,7 @@ object SlickTables extends HasDatabaseConfig[JdbcProfile] {
   class UserTagMapTable (tag: Tag) extends BaseTable[UserTagMap](tag, Some("STORE"), "USER_TAG_MAP") {
     def userId                = column[Long]("USER_ID")
     def tagId                 = column[Long]("TAG_ID")
+    def user                  = foreignKey("USER_TAG_MAP_FK", userId, userTableQ)(_.id)
     def * = (
       id,
       userId, 

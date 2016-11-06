@@ -3,7 +3,7 @@
 # ~~~~
 
 # biotop
-GET     /store/users                controllers.BUsersController.index
+GET     /store/users                controllers.BUsersController.index(tag_id: Long ?=0, event_id: Long ?=0, biotop_id: Long?=0)
 POST    /store/users                controllers.BUsersController.create
 GET     /store/users/:id            controllers.BUsersController.get(id :Long)
 PATCH   /store/users/:id            controllers.BUsersController.patch(id :Long)

@@ -8,7 +8,7 @@ import play.api.test.Helpers._
 
 class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
  
-  implicit override lazy val app = new GuiceApplicationBuilder().build()
+  implicit override lazy val app = new GuiceApplicationBuilder().build
   
   val WSClient            = app.injector.instanceOf[WSClient]
   val Localhost           = s"http://localhost:$port"
@@ -23,31 +23,31 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
   /* GET */
   "GET /store/users returns NotFound when any user does not exists" in {
     val testURL = s"$StoreUsersURL"
-    val response = await(WSClient.url(testURL).get())
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe NOT_FOUND
   }
   
-  "GET /store/users?tagId={id} returns NotFound when anyone does not has argued tag" in {
-    val testURL = s"$StoreUsersURL?tagId=999999"
-    val response = await(WSClient.url(testURL).get())
+  "GET /store/users?tag_id={id} returns NotFound when anyone does not has argued tag" in {
+    val testURL = s"$StoreUsersURL?tag_id=999999"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe NOT_FOUND 
   }
   
-  "GET /store/users?eventId={id} returns NotFound when anyone does not has argued event" in {
-    val testURL = s"$StoreUsersURL?eventId=999999"
-    val response = await(WSClient.url(testURL).get())
+  "GET /store/users?event_id={id} returns NotFound when anyone does not has argued event" in {
+    val testURL = s"$StoreUsersURL?event_id=999999"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe NOT_FOUND
   }
  
-  "GET /store/users?biotopId={id} returns NotFound when anyone does not has argued biotop" in {
-    val testURL = s"$StoreUsersURL?biotopId=999999"
-    val response = await(WSClient.url(testURL).get())
+  "GET /store/users?biotop_id={id} returns NotFound when anyone does not has argued biotop" in {
+    val testURL = s"$StoreUsersURL?biotop_id=999999"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe NOT_FOUND
@@ -55,7 +55,7 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
  
   "GET /store/users/{id} returns NotFound when any user does not exists" in {
     val testURL = s"$StoreUsersURL/999999"
-    val response = await(WSClient.url(testURL).get())
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe NOT_FOUND
@@ -193,24 +193,24 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     await(WSClient.url(StoreUsersURL).post(Json.toJson(requestUser_3)))
     
     val testURL = s"$StoreUsersURL"
-    val response = await(WSClient.url(testURL).get())
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
     responseUsers.size mustBe 3
   }
-  
+/* 
   "GET /store/users ignores illegal parameter format" in {
     val testURL = s"$StoreUsersURL?=null&=&?null"
-    val response = await(WSClient.url(testURL).get())
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
     responseUsers.size mustBe 3
   }
-  
+*/  
   val requestUser_4 = UserDto(
     Some(999999),
     Some("hoge@hoge.com"),
@@ -239,6 +239,18 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
   )
 
   /* PATCH */
+  "PATCH /store/users returns BAD_REQUEST when format is not valid Json" in {
+    val id = 1
+    val testURL = s"$StoreUsersURL/$id"
+    val invalidJson = """
+      {"dummy" : "this is invalid json..."}
+    """
+    val response = await(WSClient.url(testURL).patch(Json.toJson(invalidJson)))
+
+    response.header(ContentType) mustBe ContentTypeJsonUtf8
+    response.status mustBe BAD_REQUEST
+  }
+  
   "PATCH /store/users/{id} update user information." in {
     val id = 1
     val testURL = s"$StoreUsersURL/$id"
@@ -261,20 +273,29 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     responseUser.events       mustBe requestUser_4.events
     responseUser.biotops      mustBe requestUser_4.biotops
   }
+  
+  "PATCH /store/users/{id} return NotFound when argued id does not exist" in {
+    val testURL = s"$StoreUsersURL/999999"
+    val requestBody = Json.toJson(requestUser_4)
+    val response = await(WSClient.url(testURL).patch(requestBody))
 
-  "GET /store/users?tagId={id} searches users by tagId" in {
-    val testURL = s"$StoreUsersURL?tagId=1"
-    val response = await(WSClient.url(testURL).get())
+    response.header(ContentType) mustBe ContentTypeJsonUtf8 
+    response.status mustBe NOT_FOUND
+  }
+
+  "GET /store/users?tag_id={id} searches users by tag_id" in {
+    val testURL = s"$StoreUsersURL?tag_id=1"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUser = Json.parse(response.body).as[UserDto]
     responseUser.name mustBe requestUser_2.name
   }
-  
-  "GET /store/users?tagId={id} ignores when value is not a number" in {
-    val testURL = s"$StoreUsersURL?tagId=1tag"
-    val response = await(WSClient.url(testURL).get())
+ /* 
+  "GET /store/users?tag_id={id} ignores when value is not a number" in {
+    val testURL = s"$StoreUsersURL?tag_id=1tag"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
@@ -282,29 +303,29 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     responseUsers.size mustBe 3
   }
   
-  "GET /store/users?tagId={id} ignores empty value" in {
-    val testURL = s"$StoreUsersURL?tagId="
-    val response = await(WSClient.url(testURL).get())
+  "GET /store/users?tag_id={id} ignores empty value" in {
+    val testURL = s"$StoreUsersURL?tag_id="
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
     responseUsers.size mustBe 3
   }
-
-  "GET /store/users?eventId={id} searches users by eventId" in {
-    val testURL = s"$StoreUsersURL?eventId=1"
-    val response = await(WSClient.url(testURL).get())
+*/
+  "GET /store/users?event_id={id} searches users by event_id" in {
+    val testURL = s"$StoreUsersURL?event_id=1"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUser = Json.parse(response.body).as[UserDto]
     responseUser.name mustBe requestUser_2.name
   }
-  
-  "GET /store/users?eventId={id} ignores when value is not a number" in {
-    val testURL = s"$StoreUsersURL?eventId=1event"
-    val response = await(WSClient.url(testURL).get())
+/*  
+  "GET /store/users?event_id={id} ignores when value is not a number" in {
+    val testURL = s"$StoreUsersURL?event_id=1event"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
@@ -312,29 +333,29 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     responseUsers.size mustBe 3
   }
   
-  "GET /store/users?eventId={id} ignores empty value" in {
-    val testURL = s"$StoreUsersURL?eventId="
-    val response = await(WSClient.url(testURL).get())
+  "GET /store/users?event_id={id} ignores empty value" in {
+    val testURL = s"$StoreUsersURL?event_id="
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
     responseUsers.size mustBe 3
   }
-  
-  "GET /store/users?biotopId={id} searches users by biotopId" in {
-    val testURL = s"$StoreUsersURL?biotopId=1"
-    val response = await(WSClient.url(testURL).get())
+*/ 
+  "GET /store/users?biotop_id={id} searches users by biotop_id" in {
+    val testURL = s"$StoreUsersURL?biotop_id=1"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUser = Json.parse(response.body).as[UserDto]
     responseUser.name mustBe requestUser_2.name
   }
-  
+/* 
   "GET /store/users?biotoptId={id} ignores when value is not a number" in {
-    val testURL = s"$StoreUsersURL?biotopId=1biotop"
-    val response = await(WSClient.url(testURL).get())
+    val testURL = s"$StoreUsersURL?biotop_id=1biotop"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
@@ -342,21 +363,21 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     responseUsers.size mustBe 3
   }
   
-  "GET /store/users?biotopId={id} ignores empty value" in {
-    val testURL = s"$StoreUsersURL?biotopId="
-    val response = await(WSClient.url(testURL).get())
+  "GET /store/users?biotop_id={id} ignores empty value" in {
+    val testURL = s"$StoreUsersURL?biotop_id="
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
     responseUsers.size mustBe 3
   }
-
+*/
 
   "GET /store/users/{id} returns stored user information when user exist" in {
     val id = 1
     val testURL = s"$StoreUsersURL/$id"
-    val response = await(WSClient.url(testURL).get())
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK 
@@ -374,11 +395,11 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     responseUser.events       mustBe requestUser_1.events
     responseUser.biotops      mustBe requestUser_1.biotops
   }
-
+/*
   "GET /store/users/{id} ignores parameters" in {
     val id = 1
-    val testURL = s"$StoreUsersURL/$id?tagId=tag&eventId=イベント&order=?&limit= &offset=null"
-    val response = await(WSClient.url(testURL).get())
+    val testURL = s"$StoreUsersURL/$id?tag_id=tag&event_id=イベント&order=?&limit= &offset=null"
+    val response = await(WSClient.url(testURL).get)
 
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
@@ -396,18 +417,26 @@ class BUsrContorllerSpec extends PlaySpec with OneServerPerSuite {
     responseUser.events       mustBe requestUser_1.events
     responseUser.biotops      mustBe requestUser_1.biotops
   }
-
+*/
   /* DELETE */
   "DELETE /store/users/{id} delete user" in {
     val id = 1
     val testURL = s"$StoreUsersURL/$id"
     await(WSClient.url(testURL).delete)
-    val response = await(WSClient.url(StoreUsersURL).get())
+    val response = await(WSClient.url(StoreUsersURL).get)
     
     response.header(ContentType) mustBe ContentTypeJsonUtf8 
     response.status mustBe OK
     val responseUsers = Json.parse(response.body).as[Seq[UserDto]]
     responseUsers.size mustBe 2
+  }
+
+  "DELETE /store/users/{id} return NotFound when argued id does not exist" in {
+    val testURL = s"$StoreUsersURL/999999"
+    val response = await(WSClient.url(testURL).delete)
+
+    response.header(ContentType) mustBe ContentTypeJsonUtf8 
+    response.status mustBe NOT_FOUND
   }
 
 }
