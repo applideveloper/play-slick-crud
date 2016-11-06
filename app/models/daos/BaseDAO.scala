@@ -30,7 +30,7 @@ class BaseDAO[T <: BaseTable[A], A <: BaseEntity]()(
   implicit val tableQ: TableQuery[T]
 ) extends AbstractBaseDAO[T,A] with HasDatabaseConfig[JdbcProfile] {
   
-  protected lazy val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+  protected lazy val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfigProvider.get[JdbcProfile]("biotop")(Play.current)
   import dbConfig.driver.api._
 
   def insert(row: A): Future[Long] ={

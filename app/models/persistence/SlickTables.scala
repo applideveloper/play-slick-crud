@@ -10,7 +10,7 @@ import slick.driver.JdbcProfile
   */
 object SlickTables extends HasDatabaseConfig[JdbcProfile] {
 
-  protected lazy val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+  protected lazy val dbConfig = DatabaseConfigProvider.get[JdbcProfile]("biotop")(Play.current)
   import dbConfig.driver.api._
 
   abstract class BaseTable[T](tag: Tag, schema: Some[String], name: String) extends Table[T](tag, schema, name) {
